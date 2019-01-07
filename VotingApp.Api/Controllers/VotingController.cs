@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EasyWebSockets;
 using Microsoft.AspNetCore.Mvc;
 using VotingApp.Lib;
 
@@ -12,10 +13,12 @@ namespace VotingApp.Api.Controllers
     public class VotingController : ControllerBase
     {
         private readonly Voting _voting;
+        private readonly IWebSocketPublisher _wsPublisher;
 
-        public VotingController(Voting voting)
+        public VotingController(Voting voting, IWebSocketPublisher webSocketPublisher)
         {
             _voting = voting;
+            _wsPublisher = webSocketPublisher;
         }
 
         [HttpGet]
@@ -28,21 +31,27 @@ namespace VotingApp.Api.Controllers
         public object Start([FromBody] string[] options)
         {
             _voting.Start(options);
-            return _voting.GetState();
+            var votingState = _voting.GetState();
+            _wsPublisher.SendMessageToAllAsync(votingState);
+            return votingState;
         }
 
         [HttpPut]
         public object Vote([FromBody] string option)
         {
             _voting.Vote(option);
-            return _voting.GetState();
+            var votingState = _voting.GetState();
+            _wsPublisher.SendMessageToAllAsync(votingState);
+            return votingState;
         }
 
         [HttpDelete]
         public object Finish()
         {
             _voting.Finish();
-            return _voting.GetState();
+            var votingState = _voting.GetState();
+            _wsPublisher.SendMessageToAllAsync(votingState);
+            return votingState;
         }
     }
 }

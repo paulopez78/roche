@@ -43,7 +43,6 @@ namespace VotingApp.Api
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
             app.UseMvc();
         }
     }

@@ -43,6 +43,8 @@ namespace VotingApp.Api
                 app.UseHsts();
             }
 
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
             app.UseMvc();
         }
     }

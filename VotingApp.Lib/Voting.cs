@@ -29,5 +29,13 @@ namespace VotingApp.Lib
             var maxVotes = Votes.Max(x => x.Value);
             Winner = Votes.First(x => x.Value == maxVotes).Key; 
         }
+
+        public object GetState()
+        {
+            return new {
+                Votes,
+                Winner
+            };
+        }
     }
 }

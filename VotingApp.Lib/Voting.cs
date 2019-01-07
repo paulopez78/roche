@@ -19,9 +19,9 @@ namespace VotingApp.Lib
             Votes = options.ToDictionary(option => option, value => 0);
         }
 
-        public void Vote(string option)
+        public void Vote(string option, int step = 1)
         {
-            Votes[option] = Votes[option] + 1;
+            Votes[option] = Votes[option] + step;
         }
 
         public void Finish()

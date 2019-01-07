@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using VotingApp.Api.Controllers;
 using VotingApp.Lib;
 
 namespace VotingApp.Api
@@ -29,6 +30,7 @@ namespace VotingApp.Api
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
             services.AddSingleton<Voting>();
+            services.Configure<VotingOptions>(Configuration);
             services.AddEasyWebSockets();
         }
 

@@ -1,0 +1,20 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    run: database
+  name: database
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      run: database
+  template:
+    metadata:
+      labels:
+        run: database
+    spec:
+      containers:
+      - image: redis
+        imagePullPolicy: Always
+        name: database

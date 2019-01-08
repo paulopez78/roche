@@ -1,0 +1,24 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    run: votingapp
+  name: votingapp
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      run: votingapp
+  template:
+    metadata:
+      labels:
+        run: votingapp
+    spec:
+      containers:
+      - env:
+        - name: REDIS
+          value: database:6379
+        image: paulopez/votingapp
+        imagePullPolicy: Always
+        name: votingapp

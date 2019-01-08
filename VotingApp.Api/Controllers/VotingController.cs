@@ -4,63 +4,67 @@ using System.Linq;
 using System.Threading.Tasks;
 using EasyWebSockets;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using StackExchange.Redis;
 using VotingApp.Lib;
 
 namespace VotingApp.Api.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class VotingController : ControllerBase
+  [Route("api/[controller]")]
+  [ApiController]
+  public class VotingController : ControllerBase
+  {
+    private readonly ILogger<VotingController> _logger;
+    private readonly IWebSocketPublisher _ws;
+    private readonly IDatabase _redisDb;
+
+    private const string VotingAppKey = "VotingKey";
+
+    public VotingController(
+      IWebSocketPublisher ws,
+      IConnectionMultiplexer redis,
+      ILogger<VotingController> logger)
     {
-        private readonly Voting _voting;
-        private readonly IWebSocketPublisher _wsPublisher;
-        private readonly int _votingStep;
-        private readonly ILogger<VotingController> _logger;
-
-        public VotingController(Voting voting, IWebSocketPublisher webSocketPublisher, IOptions<VotingOptions> votingOptions, ILogger<VotingController> logger)
-        {
-            _voting = voting;
-            _wsPublisher = webSocketPublisher;
-            _votingStep = votingOptions.Value.VotingStep;
-            _logger = logger;
-        }
-
-        [HttpGet]
-        public object Get()
-        {
-            return _voting.GetState();
-        }
-
-        [HttpPost]
-        public object Start([FromBody] string[] options)
-        {
-            _logger.LogWarning("Starting VOTING!");
-            _voting.Start(options);
-            var votingState = _voting.GetState();
-            _wsPublisher.SendMessageToAllAsync(votingState);
-            return votingState;
-        }
-
-        [HttpPut]
-        public object Vote([FromBody] string option)
-        {
-            _voting.Vote(option, _votingStep);
-            var votingState = _voting.GetState();
-            _wsPublisher.SendMessageToAllAsync(votingState);
-            return votingState;
-        }
-
-        [HttpDelete]
-        public object Finish()
-        {
-            _voting.Finish();
-            var votingState = _voting.GetState();
-            _wsPublisher.SendMessageToAllAsync(votingState);
-
-            return votingState;
-        }
+      _logger = logger;
+      _ws = ws;
+      _redisDb = redis.GetDatabase();
     }
+
+    [HttpGet]
+    public async Task<VotingState> Get() => await GetVotingState();
+
+    [HttpPost]
+    public async Task<VotingState> Start([FromBody] string[] topics) =>
+      await Execute(v => v.Start(topics));
+
+    [HttpPut]
+    public async Task<VotingState> Vote([FromBody] string topic) =>
+      await Execute(v => v.Vote(topic));
+
+    [HttpDelete]
+    public async Task<VotingState> Finish() =>
+      await Execute(v => v.Finish());
+
+    private async Task<VotingState> GetVotingState()
+    {
+      var votingState = await _redisDb.StringGetAsync(VotingAppKey);
+      return (votingState.HasValue)
+        ? JsonConvert.DeserializeObject<VotingState>(votingState)
+        : new VotingState();
+    }
+
+    private async Task<VotingState> Execute(Func<Voting, VotingState> votingCommand)
+    {
+      var votingState = await GetVotingState();
+      var voting = new Voting(votingState);
+
+      var newVotingState = votingCommand(voting);
+
+      await _redisDb.StringSetAsync(VotingAppKey, JsonConvert.SerializeObject(newVotingState));
+      await _ws.SendMessageToAllAsync(newVotingState);
+      return newVotingState;
+    }
+  }
 }

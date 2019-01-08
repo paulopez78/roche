@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using StackExchange.Redis;
 using VotingApp.Api.Controllers;
 using VotingApp.Lib;
 
@@ -32,6 +33,8 @@ namespace VotingApp.Api
             services.AddSingleton<Voting>();
             services.Configure<VotingOptions>(Configuration);
             services.AddEasyWebSockets();
+            var redisConnectionString = Configuration.GetValue("REDIS", "localhost:6379");
+            services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -8,6 +8,11 @@ services:
       context: .
     ports:
       - "8080:80"
+    environment:
+      REDIS: redisapp:6379
+  
+  redisapp:
+    image: redis
   
   votingapp-test:
     image: votingapp-test

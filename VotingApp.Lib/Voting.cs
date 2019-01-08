@@ -1,41 +1,40 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace VotingApp.Lib
 {
-    public class Voting
+  public class Voting
+  {
+    private readonly VotingState _state;
+    public Voting(VotingState state)
     {
-        public Voting()
-        {
-
-        }
-
-        public Dictionary<string, int> Votes { get; private set; }
-        public string Winner { get; private set; }
-
-        public void Start(params string[] options)
-        {
-            Votes = options.ToDictionary(option => option, value => 0);
-        }
-
-        public void Vote(string option, int step = 1)
-        {
-            Votes[option] = Votes[option] + step;
-        }
-
-        public void Finish()
-        {
-            var maxVotes = Votes.Max(x => x.Value);
-            Winner = Votes.First(x => x.Value == maxVotes).Key; 
-        }
-
-        public object GetState()
-        {
-            return new {
-                Votes,
-                Winner
-            };
-        }
+      _state = state;
     }
+
+    public Voting()
+    {
+      _state = new VotingState();
+    }
+
+    public VotingState Start(params string[] options)
+    {
+      _state.Votes = options.ToDictionary(x => x, _ => 0);
+      return _state;
+    }
+
+    public VotingState Vote(string topic, int step = 1)
+    {
+      _state.Votes[topic] = _state.Votes[topic] + step;
+      return _state;
+    }
+
+    public VotingState Finish()
+    {
+      var maxVotes = _state.Votes.Max(x => x.Value);
+      _state.Winner = _state.Votes.First(x => x.Value == maxVotes).Key;
+      return _state;
+    }
+  }
 }

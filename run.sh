@@ -1,13 +1,14 @@
 rm -rf ./build
-dotnet publish VotingApp.Api -o ../build
 docker build -f Dockerfile -t paulopez/votingapp .
-docker rm -f $(docker ps -qa)
+docker rm -f myvotingapp
 docker run \
     -d \
+    --name myvotingapp \
     -p 8080:80 \
     paulopez/votingapp
 
 sleep 5
+set -e
 ./test.sh
 
 docker push paulopez/votingapp
